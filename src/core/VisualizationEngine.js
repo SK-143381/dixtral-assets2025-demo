@@ -44,6 +44,7 @@ export class VisualizationEngine {
         }
 
         this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
@@ -306,18 +307,23 @@ export class VisualizationEngine {
             const filledColors = [];
             const filledIndices = [];
             
+            // Separate arrays for highlighted rectangles to ensure they render properly on Mac
+            const highlightPositions = [];
+            const highlightColors = [];
+            const highlightIndices = [];
+            
             // CRITICAL FIX: Ensure wireframe generation works regardless of navigation state
             try {
-                this.generateWireframe(dataGrid, linePositions, lineColors, colorScheme, filledPositions, filledColors, filledIndices);
+                this.generateWireframe(dataGrid, linePositions, lineColors, colorScheme, filledPositions, filledColors, filledIndices, highlightPositions, highlightColors, highlightIndices);
                 validPoints = Math.max(linePositions.length / 3, filledPositions.length / 3);
-                EngineLogger.debug(`Generated wireframe: ${linePositions.length / 6} lines, ${filledPositions.length / 3} filled vertices`);
+                EngineLogger.debug(`Generated wireframe: ${linePositions.length / 6} lines, ${filledPositions.length / 3} filled vertices, ${highlightPositions.length / 3} highlight vertices`);
             } catch (error) {
                 EngineLogger.error('Error generating wireframe:', error);
                 // Fallback to empty arrays if wireframe generation fails
                 validPoints = 0;
             }
             
-            // Create hybrid buffers for filled mesh with black grid overlay
+            // Create hybrid buffers for filled mesh with black grid overlay and separate highlights
             // CRITICAL FIX: Ensure buffer creation succeeds even with limited data
             if (filledPositions.length > 0 && filledIndices.length > 0) {
                 this.buffers = {
@@ -331,6 +337,12 @@ export class VisualizationEngine {
                     linePosition: this.gl.createBuffer(),
                     lineColor: this.gl.createBuffer(),
                     lineCount: linePositions.length / 3,
+                    
+                    // Separate buffers for highlighted rectangles (Mac compatibility)
+                    highlightPosition: this.gl.createBuffer(),
+                    highlightColor: this.gl.createBuffer(),
+                    highlightIndices: this.gl.createBuffer(),
+                    highlightCount: highlightIndices.length,
                     
                     mode: 'hybrid_mesh' // Special mode for filled mesh with grid overlay
                 };
@@ -352,7 +364,17 @@ export class VisualizationEngine {
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.lineColor);
                 this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(lineColors), this.gl.STATIC_DRAW);
                 
-                EngineLogger.debug(`Surface buffers created successfully: ${this.buffers.count} triangles, ${this.buffers.lineCount} lines`);
+                // Set up separate highlight buffers for Mac compatibility
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.highlightPosition);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(highlightPositions), this.gl.STATIC_DRAW);
+                
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.highlightColor);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(highlightColors), this.gl.STATIC_DRAW);
+                
+                this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.buffers.highlightIndices);
+                this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(highlightIndices), this.gl.STATIC_DRAW);
+                
+                EngineLogger.debug(`Surface buffers created successfully: ${this.buffers.count} triangles, ${this.buffers.lineCount} lines, ${this.buffers.highlightCount} highlight triangles`);
             } else {
                 // Fallback to points mode if surface generation fails
                 EngineLogger.warn('Surface generation failed - falling back to points mode');
@@ -545,6 +567,11 @@ export class VisualizationEngine {
             const surfaceProgram = this.shaderProgram;
             gl.useProgram(surfaceProgram);
             
+            // Disable blending for solid color rectangles to avoid transparency issues
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthMask(true);
+            gl.disable(gl.BLEND);
+            
             // Set the uniform values
             gl.uniformMatrix4fv(surfaceProgram.projectionMatrixUniform, false, projectionMatrix);
             gl.uniformMatrix4fv(surfaceProgram.modelViewMatrixUniform, false, modelViewMatrix);
@@ -565,10 +592,58 @@ export class VisualizationEngine {
             gl.drawElements(gl.TRIANGLES, this.buffers.count, gl.UNSIGNED_SHORT, 0);
         }
         
-        // Then, render the black grid lines on top using line shader
+        // Second, render highlighted rectangles on top with FORCED opacity for Mac compatibility
+        if (this.buffers.highlightCount > 0) {
+            // Use line shader instead of surface shader to avoid any point-specific transparency logic
+            const lineProgram = this.lineShaderProgram;
+            gl.useProgram(lineProgram);
+            
+            // AGGRESSIVE: Completely disable all transparency mechanisms for highlighted rectangles
+            gl.disable(gl.BLEND);
+            gl.disable(gl.DEPTH_TEST); // Disable depth test to force rendering on top
+            gl.depthMask(false);
+            
+            // Force polygon offset to ensure highlighting renders on top
+            gl.enable(gl.POLYGON_OFFSET_FILL);
+            gl.polygonOffset(-1.0, -1.0);
+            
+            // Set the uniform values for line shader (simpler, no point scale)
+            gl.uniformMatrix4fv(lineProgram.projectionMatrixUniform, false, projectionMatrix);
+            gl.uniformMatrix4fv(lineProgram.modelViewMatrixUniform, false, modelViewMatrix);
+            
+            // Set the attribute values for highlighted triangles using line shader
+            gl.enableVertexAttribArray(lineProgram.vertexPositionAttribute);
+            gl.enableVertexAttribArray(lineProgram.vertexColorAttribute);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.highlightPosition);
+            gl.vertexAttribPointer(lineProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.highlightColor);
+            gl.vertexAttribPointer(lineProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+            
+            // Draw the highlighted triangles - forced to be opaque using simple line shader
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.highlightIndices);
+            gl.drawElements(gl.TRIANGLES, this.buffers.highlightCount, gl.UNSIGNED_SHORT, 0);
+            
+            // Restore WebGL state after aggressive highlighting
+            gl.disable(gl.POLYGON_OFFSET_FILL);
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthMask(true);
+            
+            console.log('[DEBUG] FORCED opaque rendering of', this.buffers.highlightCount, 'highlighted triangles using line shader for Mac');
+        }
+        
+        // Finally, render the black grid lines on top using line shader with blend
         if (this.buffers.lineCount > 0) {
             const lineProgram = this.lineShaderProgram;
             gl.useProgram(lineProgram);
+            
+            // Enable blending only for grid lines with controlled alpha
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.depthMask(false); // Don't write to depth buffer for lines to avoid z-fighting
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             
             // Set the uniform values
             gl.uniformMatrix4fv(lineProgram.projectionMatrixUniform, false, projectionMatrix);
@@ -586,6 +661,11 @@ export class VisualizationEngine {
             
             // Draw the grid lines
             gl.drawArrays(gl.LINES, 0, this.buffers.lineCount);
+            
+            // Restore states for subsequent rendering
+            gl.depthMask(true);
+            gl.disable(gl.BLEND);
+            gl.depthFunc(gl.LESS);
         }
     }
 
@@ -833,7 +913,7 @@ export class VisualizationEngine {
         }
     }
 
-    generateWireframe(dataGrid, positions, colors, colorScheme, filledPositions = [], filledColors = [], filledIndices = []) {
+    generateWireframe(dataGrid, positions, colors, colorScheme, filledPositions = [], filledColors = [], filledIndices = [], highlightPositions = [], highlightColors = [], highlightIndices = []) {
         console.log('[DEBUG] generateWireframe called with dataGrid length:', dataGrid.length);
         let lineCount = 0;
         
@@ -893,7 +973,7 @@ export class VisualizationEngine {
             }
         } else {
             // Use the enhanced grid-based approach with rectangle detection for 3D heatmap
-            this.generateWireframeWithRectangles(dataGrid, allPoints, positions, colors, colorScheme, wireframeRectangles, filledPositions, filledColors, filledIndices);
+            this.generateWireframeWithRectangles(dataGrid, allPoints, positions, colors, colorScheme, wireframeRectangles, filledPositions, filledColors, filledIndices, highlightPositions, highlightColors, highlightIndices);
             lineCount = positions.length / 6; // Each line uses 6 values (2 points * 3 coordinates)
         }
         
@@ -919,7 +999,7 @@ export class VisualizationEngine {
      * Generate wireframe with rectangle detection for 3D heatmap highlighting
      * @private
      */
-    generateWireframeWithRectangles(dataGrid, allPoints, positions, colors, colorScheme, rectangles, filledPositions = [], filledColors = [], filledIndices = []) {
+    generateWireframeWithRectangles(dataGrid, allPoints, positions, colors, colorScheme, rectangles, filledPositions = [], filledColors = [], filledIndices = [], highlightPositions = [], highlightColors = [], highlightIndices = []) {
         const processedRectangles = new Set();
         
         // Iterate through grid to find rectangles formed by wireframe lines
@@ -957,30 +1037,40 @@ export class VisualizationEngine {
                                         this.highlightController && 
                                         this.highlightController.isWireframeRectangleHighlighted(rectIndex);
                     
-                    // Create filled rectangle for all rectangles
+                    // Create filled rectangle - separate highlighted and normal rectangles for Mac compatibility
                     const vertices = [p1, p2, p3, p4];
-                    const vertexStartIndex = filledPositions.length / 3;
                     
-                    // Add vertices to filled positions buffer with individual vertex colors for smooth transitions
-                    for (const vertex of vertices) {
-                        filledPositions.push(vertex.nx, vertex.ny, vertex.nz);
+                    if (isHighlighted) {
+                        // Add highlighted rectangle to separate buffer for Mac compatibility
+                        const highlightVertexStartIndex = highlightPositions.length / 3;
+                        console.log('[DEBUG] Adding highlighted rectangle to separate buffer for Mac compatibility, index:', rectIndex);
                         
-                        if (isHighlighted) {
-                            // Use white highlight color for highlighted rectangle
-                            const highlightColor = this.highlightController.getWireframeHighlightColor();
-                            filledColors.push(highlightColor[0], highlightColor[1], highlightColor[2], highlightColor[3]);
-                        } else {
+                        // Add vertices to highlight positions buffer with FORCED solid white color
+                        for (const vertex of vertices) {
+                            highlightPositions.push(vertex.nx, vertex.ny, vertex.nz);
+                            // AGGRESSIVE: Force maximum white color - no transparency whatsoever
+                            highlightColors.push(1.0, 1.0, 1.0, 1.0);
+                        }
+                        
+                        // Create two triangles for the highlighted rectangle
+                        highlightIndices.push(highlightVertexStartIndex + 0, highlightVertexStartIndex + 1, highlightVertexStartIndex + 2);
+                        highlightIndices.push(highlightVertexStartIndex + 1, highlightVertexStartIndex + 3, highlightVertexStartIndex + 2);
+                    } else {
+                        // Add normal rectangle to regular buffer
+                        const vertexStartIndex = filledPositions.length / 3;
+                        
+                        // Add vertices to filled positions buffer with individual vertex colors for smooth transitions
+                        for (const vertex of vertices) {
+                            filledPositions.push(vertex.nx, vertex.ny, vertex.nz);
                             // Use enhanced color based on individual vertex Y value for smooth transitions
                             const vertexColor = this.getEnhancedColor(vertex.y, vertex.x, vertex.z, colorScheme);
                             filledColors.push(vertexColor.r, vertexColor.g, vertexColor.b, vertexColor.a);
                         }
+                        
+                        // Create two triangles for the filled rectangle
+                        filledIndices.push(vertexStartIndex + 0, vertexStartIndex + 1, vertexStartIndex + 2);
+                        filledIndices.push(vertexStartIndex + 1, vertexStartIndex + 3, vertexStartIndex + 2);
                     }
-                    
-                    // Create two triangles for the filled rectangle
-                    // Triangle 1: p1, p2, p3
-                    filledIndices.push(vertexStartIndex + 0, vertexStartIndex + 1, vertexStartIndex + 2);
-                    // Triangle 2: p2, p4, p3  
-                    filledIndices.push(vertexStartIndex + 1, vertexStartIndex + 3, vertexStartIndex + 2);
                     
                     // Add black grid edges for ALL rectangles
                     const edges = [
