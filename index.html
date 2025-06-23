@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive 3D surface plotting tool with various display modes and analysis tools for scientific data visualization">
+    <title>DIXTRAL - Dynamic Interface eXploration of Three-dimensional Representations for Adaptive Learning</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header role="banner">
+            <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+                <span class="dark-mode-toggle-icon">🌙</span>
+                <span class="dark-mode-toggle-text">Dark Mode</span>
+            </button>
+            <h1>DIXTRAL</h1>
+            <p class="subtitle">Dynamic Interface eXploration of Three-dimensional Representations for Adaptive Learning</p>
+            <div class="actions" role="toolbar" aria-label="Visualization Actions">
+                <button id="resetView" aria-label="Reset View to Default Position">Reset View</button>
+                <button id="exportData" aria-label="Export Visualization Data">Export Data</button>
+                <button id="exportImage" aria-label="Export Visualization as Image">Export Image</button>
+            </div>
+            <div class="sample-data" role="toolbar" aria-label="Sample Data Selection">
+                <button id="loadBenzene" aria-label="Load Benzene Sample Data">Load Benzene</button>
+                <button id="loadSinusoidal" aria-label="Load Sinusoidal Sample Data">Load Sinusoidal</button>
+                <button id="loadCustomData" aria-label="Load Your Own Data">Load Your Own Data</button>
+            </div>
+            <div id="variableSelection" class="variable-selection" style="display: none;" role="group" aria-label="Variable Selection">
+                <div class="variable-group">
+                    <label for="xVariable">X Variable:</label>
+                    <select id="xVariable" aria-label="Select X variable"></select>
+                </div>
+                <div class="variable-group">
+                    <label for="yVariable">Y Variable:</label>
+                    <select id="yVariable" aria-label="Select Y variable"></select>
+                </div>
+                <div class="variable-group">
+                    <label for="zVariable">Z Variable:</label>
+                    <select id="zVariable" aria-label="Select Z variable"></select>
+                </div>
+            </div>        
+        </header>
+        <main role="main">
+            <div class="plot-container" aria-labelledby="plot-container-label">
+                <h2 id="plot-container-label" class="sr-only">Interactive 3D Plot Application</h2>
+                <canvas id="glCanvas" 
+                        role="application" 
+                        tabindex="0"
+                        aria-label="3D Surface Plot. Tab to activate. Use arrow keys to navigate. Press N to toggle navigation modes."
+                        aria-describedby="plot-navigation-instructions">
+                </canvas>
+                <div id="plot-navigation-instructions" class="sr-only">
+                    When focused, this plot operates in application mode. Screen reader browsing shortcuts are disabled.
+                    Use arrow keys to navigate between segments and data points. Press N to toggle navigation modes (Y, Z, X axes). Press X, Y and Z to read out axes. Press Enter to hear current data values. 
+                    Press S to toggle audio sonification, T to cycle text modes, C to toggle TTS. Tab away to exit application mode.
+                </div>
+            </div>
+            <div class="controls" role="form" aria-labelledby="visualization-controls-heading">
+                <h2 id="visualization-controls-heading" class="sr-only">Visualization Controls</h2>                
+                <div class="control-group">
+                    <label for="xStart">X Start:</label>
+                    <input type="range" id="xStart" min="120" max="200" value="120" aria-valuemin="120" aria-valuemax="200" aria-valuenow="120" aria-valuetext="120">
+                    <span id="xStartValue" aria-live="polite">120</span>
+                </div>
+                <div class="control-group">
+                    <label for="xEnd">X End:</label>
+                    <input type="range" id="xEnd" min="120" max="200" value="200" aria-valuemin="120" aria-valuemax="200" aria-valuenow="200" aria-valuetext="200">
+                    <span id="xEndValue" aria-live="polite">200</span>
+                </div>
+                <div class="control-group">
+                    <label for="zStart">Z Start:</label>
+                    <input type="range" id="zStart" min="0" max="15" step="0.1" value="0" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0" aria-valuetext="0.0">
+                    <span id="zStartValue" aria-live="polite">0.0</span>
+                </div>
+                <div class="control-group">
+                    <label for="zEnd">Z End:</label>
+                    <input type="range" id="zEnd" min="0" max="15" step="0.1" value="15" aria-valuemin="0" aria-valuemax="15" aria-valuenow="15" aria-valuetext="15.0">
+                    <span id="zEndValue" aria-live="polite">15.0</span>
+                </div>                
+                <div class="control-group">
+                    <label for="displayMode">Display Mode:</label>
+                    <select id="displayMode" aria-label="Select visualization display mode">
+                        <option value="surface" selected>Surface</option>
+                        <option value="points">Points</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="colorScheme">Color Scheme:</label>
+                    <select id="colorScheme" aria-label="Select color scheme for visualization">
+                        <option value="rainbow">Rainbow</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="heatmap">Heatmap</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="pointSize">Point Size:</label>
+                    <input type="range" id="pointSize" min="1" max="10" value="3" aria-valuemin="1" aria-valuemax="10" aria-valuenow="3" aria-valuetext="3 (16px)">
+                    <span id="pointSizeValue" aria-live="polite">1</span>
+                </div>
+                <div class="control-group">
+                    <label for="threshold">Y Threshold:</label>
+                    <input type="range" id="threshold" min="0" max="1" step="0.01" value="0" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-valuetext="0.00">
+                    <span id="thresholdValue" aria-live="polite">0.00</span>
+                </div>
+                <div class="control-group">
+                    <label for="rotationX">Rotation X:</label>
+                                            <input type="range" id="rotationX" min="-180" max="180" value="0" aria-valuemin="-180" aria-valuemax="180" aria-valuenow="0" aria-valuetext="0 degrees">
+                    <span id="rotationXValue" aria-live="polite">0</span>
+                </div>
+                <div class="control-group">
+                    <label for="rotationY">Rotation Y:</label>
+                    <input type="range" id="rotationY" min="-180" max="180" value="0" aria-valuemin="-180" aria-valuemax="180" aria-valuenow="0" aria-valuetext="0 degrees">
+                    <span id="rotationYValue" aria-live="polite">0</span>
+                </div>
+                <div class="control-group">
+                    <label for="zoom">Zoom:</label>
+                    <input type="range" id="zoom" min="0.1" max="2" step="0.1" value="1" aria-valuemin="0.1" aria-valuemax="2" aria-valuenow="1" aria-valuetext="1.0x">
+                    <span id="zoomValue" aria-live="polite">1.0</span>
+                </div>            
+            </div>
+            <div class="accessibility-section">
+                <div id="navigationInfo" class="navigation-info" aria-hidden="true">
+                    <!-- Navigation information will be displayed here -->
+                </div>
+                <div class="accessibility-info">
+                    <p>Tab to the plot above to automatically activate navigation mode, or press H to open the help menu with accessibility controls and keyboard shortcuts.</p>
+                </div>
+            </div>
+            <div class="info-panel" role="complementary" aria-label="Visualization Information">
+                <div class="performance" aria-hidden="true">
+                    <span>FPS: <span id="fps">0</span></span>
+                    <span>Points: <span id="pointCount">0</span></span>
+                </div>
+                <div class="sample-info">
+                    <h3 id="sample-info-heading">Data Description</h3>
+                    <div id="sampleInfo" aria-labelledby="sample-info-heading" aria-live="polite"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Help Menu Popup -->
+    <div id="helpMenu" class="help-menu" role="dialog" aria-labelledby="helpMenuTitle" aria-hidden="true">
+        <div class="help-menu-content">
+            <h2 id="helpMenuTitle">Help & Accessibility Controls</h2>
+            <button class="close-help" aria-label="Close help menu">×</button>
+            <div class="keyboard-controls">
+                <h3>Application Mode Navigation</h3>
+                <ul>
+                    <li><strong>Tab to the plot:</strong> Enters application mode - screen reader browsing shortcuts are automatically disabled and navigation is activated</li>
+                    <li><strong>Tab away from plot:</strong> Exits application mode - screen reader browsing shortcuts are restored and navigation is deactivated</li>
+                    <li><strong>S key:</strong> Toggle sonification audio feedback on/off (works when plot is focused)</li>
+                    <li><strong>Application role:</strong> Plot operates as an interactive application, not a document</li>
+                </ul>
+                <h3>Navigation Controls (when plot is focused)</h3>
+                <ul>
+                    <li><strong>N key:</strong> Toggle navigation axis between Y, Z, and X axis navigation (cycles Y→Z→X→Y)</li>
+                    <li><strong>Y Axis Navigation:</strong> Data grouped by Y value ranges
+                        <ul>
+                            <li>←/→ Arrow Keys: Move point-by-point through X dimension within current Y segment</li>
+                            <li>↑/↓ Arrow Keys: Move point-by-point through Z dimension (up=positive Z, down=negative Z)</li>
+                            <li>Ctrl+Shift+↑/↓: Move between Y segments (different Y value ranges)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Z Axis Navigation:</strong> Data grouped by exact Z values (dynamic segments)
+                        <ul>
+                            <li>←/→ Arrow Keys: Move point-by-point through X dimension within current Z segment</li>
+                            <li>↑/↓ Arrow Keys: Move point-by-point through Y dimension with same X,Z coordinates (up=higher Y, down=lower Y)</li>
+                            <li>Ctrl+Shift+↑/↓: Move between Z segments (different Z values)</li>
+                            <li><strong>Constraint:</strong> Up/down movement only works when X and Z coordinates remain identical; plays boundary sound if X or Z would also change</li>
+                        </ul>
+                    </li>
+                    <li><strong>X Axis Navigation:</strong> Data grouped by exact X values (dynamic segments)
+                        <ul>
+                            <li>←/→ Arrow Keys: Move point-by-point through Z dimension within current X segment (left=negative Z, right=positive Z)</li>
+                            <li>↑/↓ Arrow Keys: Move point-by-point through Y dimension with same X,Z coordinates (up=higher Y, down=lower Y)</li>
+                            <li>Ctrl+Shift+↑/↓: Move between X segments (different X values)</li>
+                            <li><strong>Constraint:</strong> Up/down movement only works when X and Z coordinates remain identical; plays boundary sound if X or Z would also change</li>
+                        </ul>
+                    </li>
+                    <li><strong>Point-by-Point Movement:</strong> All arrow keys move from one actual data point to the next actual data point, prioritizing the shortest distance in the movement direction while staying close to the current position in the perpendicular axis</li>
+                    <li>Enter: Read current point (announces coordinates and values in selected verbosity mode)</li>
+                </ul>
+                <h3>Other Keyboard Controls</h3>
+                <ul>
+                    <li>T: Cycle text display modes (off → verbose → terse → superTerse) - works with both built-in TTS and screen readers</li>
+                    <li>C: Toggle built-in TTS (disabled by default, announces "Built-in TTS on/off")</li>
+                    <li>N: Toggle navigation axis (Y-axis ↔ Z-axis ↔ X-axis) in point display mode</li>
+                    <li>A: Toggle axis visibility (show/hide 3D axes display)</li>
+                    <li>M: Toggle dark/light mode</li>
+                    <li>R: Reset view to default position</li>
+                    <li>1: Switch to surface display mode</li>
+                    <li>2: Switch to points display mode</li>
+                    <li>Ctrl: Interrupt current speech</li>
+                    <li>F: Cycle through speech rates (0.5x → 1.0x → 1.5x → 2.0x → 2.5x → 3.0x → 3.5x → 4.0x)</li>
+                    <li>Ctrl+G: Check gamepad status</li>
+                    <li>Ctrl+Shift+G: Toggle gamepad control on/off</li>
+                    <li>H: Open/close this help menu</li>
+                </ul>
+                <h3>Axis Label Announcements</h3>
+                <ul>
+                    <li><strong>X:</strong> Announce X-axis label and units</li>
+                    <li><strong>Y:</strong> Announce Y-axis label and units</li>
+                    <li><strong>Z:</strong> Announce Z-axis label and units</li>
+                    <li>Press X, Y, or Z to hear the corresponding axis information</li>
+                </ul>
+                <h3>Gamepad Controls</h3>
+                <p>Xbox/PlayStation gamepad support for plot navigation:</p>
+                <ul>
+                    <li>Left Joystick: Pan around the plot (horizontal and vertical rotation)</li>
+                    <li>Right Joystick: Zoom in and out (push up to zoom in, push down to zoom out)</li>
+                    <li>Automatic dead zone compensation to prevent drift</li>
+                    <li>Works with any standard gamepad (Xbox, PlayStation, etc.)</li>
+                    <li>Connect a gamepad and it will be automatically detected</li>
+                </ul>
+                <h3>Sonification Information</h3>
+                <p>Each point is sonified with enhanced Y-value-based audio feedback:</p>
+                <ul>
+                    <li><strong>Frequency (Pitch):</strong> Based on Y value (higher Y = higher pitch, 200-1200 Hz)</li>
+                    <li><strong>Timbre (Sound Character):</strong> Based on X coordinate (sine → triangle - gentle waveforms only)</li>
+                    <li><strong>Duration:</strong> Based on Z coordinate (0.15-0.4 seconds - shorter for comfort)</li>
+                    <li><strong>Volume:</strong> Also correlates with Y value for reinforcement (gentler levels)</li>
+                </ul>
+                <p>This provides rich multi-dimensional audio feedback where Y values are the primary distinguishing feature.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-reader-announcement" class="sr-only" aria-live="polite">
+        <!-- General announcements will appear here -->
+    </div>
+    
+    <!-- Dedicated live region for navigation announcements -->
+    <div id="navigation-announcements" class="sr-only" aria-live="assertive" aria-atomic="true">
+        <!-- Navigation announcements will appear here -->
+    </div>
+    
+    <script type="module" src="src/main.js"></script>
+    <div id="visualization-description" class="sr-only">
+        This application visualizes 3D surface data in different display modes. Use the controls to adjust the X range, Z range, and visual properties. The visualization can be rotated and zoomed using the sliders or mouse interactions. Analysis tools are available to find peaks, apply baseline correction, and perform spectral deconvolution.
+    </div>
+</body>
+</html>

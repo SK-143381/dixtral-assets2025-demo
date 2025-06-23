@@ -1,0 +1,19 @@
+{
+  "name": "dixtral",
+  "version": "1.0.0",
+  "description": "WebGL-based generic 3D surface plotting visualization application with comprehensive accessibility features including review mode, sonification, and universal navigation",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "npm run build"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.4.3"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
