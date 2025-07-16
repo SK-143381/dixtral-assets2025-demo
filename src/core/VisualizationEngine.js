@@ -562,39 +562,38 @@ export class VisualizationEngine {
         
         const gl = this.gl;
         
-        // First, render the filled colored rectangles using surface shader
+        // 1. Render the filled colored rectangles using the LINE SHADER (Mac compatibility)
         if (this.buffers.count > 0) {
-            const surfaceProgram = this.shaderProgram;
-            gl.useProgram(surfaceProgram);
-            
+            const lineProgram = this.lineShaderProgram;
+            gl.useProgram(lineProgram);
+
             // Disable blending for solid color rectangles to avoid transparency issues
             gl.enable(gl.DEPTH_TEST);
             gl.depthMask(true);
             gl.disable(gl.BLEND);
-            
-            // Set the uniform values
-            gl.uniformMatrix4fv(surfaceProgram.projectionMatrixUniform, false, projectionMatrix);
-            gl.uniformMatrix4fv(surfaceProgram.modelViewMatrixUniform, false, modelViewMatrix);
-            gl.uniform1f(surfaceProgram.pointScaleUniform, 1.0);
-            
-            // Set the attribute values for triangles
-            gl.enableVertexAttribArray(surfaceProgram.vertexPositionAttribute);
-            gl.enableVertexAttribArray(surfaceProgram.vertexColorAttribute);
-            
+
+            // Set the uniform values (no point scale for line shader)
+            gl.uniformMatrix4fv(lineProgram.projectionMatrixUniform, false, projectionMatrix);
+            gl.uniformMatrix4fv(lineProgram.modelViewMatrixUniform, false, modelViewMatrix);
+
+            // Set the attribute values for triangles (only those required by line shader)
+            gl.enableVertexAttribArray(lineProgram.vertexPositionAttribute);
+            gl.enableVertexAttribArray(lineProgram.vertexColorAttribute);
+            // Do NOT enable pointSizeAttribute
+
             gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.position);
-            gl.vertexAttribPointer(surfaceProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-            
+            gl.vertexAttribPointer(lineProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
             gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.color);
-            gl.vertexAttribPointer(surfaceProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-            
+            gl.vertexAttribPointer(lineProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
             // Draw the filled triangles
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
             gl.drawElements(gl.TRIANGLES, this.buffers.count, gl.UNSIGNED_SHORT, 0);
         }
         
-        // Second, render highlighted rectangles on top with FORCED opacity for Mac compatibility
+        // 2. Render highlighted rectangles on top with FORCED opacity for Mac compatibility
         if (this.buffers.highlightCount > 0) {
-            // Use line shader instead of surface shader to avoid any point-specific transparency logic
             const lineProgram = this.lineShaderProgram;
             gl.useProgram(lineProgram);
             
@@ -614,6 +613,7 @@ export class VisualizationEngine {
             // Set the attribute values for highlighted triangles using line shader
             gl.enableVertexAttribArray(lineProgram.vertexPositionAttribute);
             gl.enableVertexAttribArray(lineProgram.vertexColorAttribute);
+            // Do NOT enable pointSizeAttribute
             
             gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.highlightPosition);
             gl.vertexAttribPointer(lineProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
@@ -633,7 +633,7 @@ export class VisualizationEngine {
             console.log('[DEBUG] FORCED opaque rendering of', this.buffers.highlightCount, 'highlighted triangles using line shader for Mac');
         }
         
-        // Finally, render the black grid lines on top using line shader with blend
+        // 3. Render the black grid lines on top using line shader with blend
         if (this.buffers.lineCount > 0) {
             const lineProgram = this.lineShaderProgram;
             gl.useProgram(lineProgram);
@@ -652,6 +652,7 @@ export class VisualizationEngine {
             // Set the attribute values for lines
             gl.enableVertexAttribArray(lineProgram.vertexPositionAttribute);
             gl.enableVertexAttribArray(lineProgram.vertexColorAttribute);
+            // Do NOT enable pointSizeAttribute
             
             gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.linePosition);
             gl.vertexAttribPointer(lineProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
