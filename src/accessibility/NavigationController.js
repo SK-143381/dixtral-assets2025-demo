@@ -2569,9 +2569,11 @@ export class NavigationController {
         // Always announce to screen reader (works with external screen readers like NVDA, JAWS, VoiceOver)
         this.textController.announceToScreenReader(message, true); // Assertive - interrupts other announcements
         
-        // Only use built-in TTS if it's explicitly enabled by the user
-        if (this.ttsController && this.ttsController.isEnabled) {
-            this.textController.speak(message, false); // Don't force - respect user's TTS preference
+        // Also use built-in TTS to provide immediate audible feedback when the plot is active.
+        // Use a "point announcement" flag so TTS will speak even if the global TTS toggle is off.
+        // This ensures X/Y/Z keys produce an audible announcement for users who tab into the plot.
+        if (this.ttsController) {
+            this.textController.speak(message, true); // Force point announcement (plays regardless of TTS toggle)
         }
 
         AccessibilityLogger.info(`Announced ${normalizedAxis.toUpperCase()} axis label: ${message}`);
