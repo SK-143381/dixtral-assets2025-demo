@@ -185,9 +185,9 @@ export class SonificationController {
         const frequency = minFreq + normalizedValue * (maxFreq - minFreq);
         
         // Even higher minimum volume for surface/wireframe mode to ensure squares are clearly audible
-        const minVolume = 0.85;
-        const maxVolume = 1.0;
-        const volume = minVolume + normalizedValue * (maxVolume - minVolume);
+    const minVolume = 0.85;
+    const maxVolume = 1.0;
+    let volume = minVolume + normalizedValue * (maxVolume - minVolume);
         
         this.logger?.debug(`Calculated: normalizedValue=${normalizedValue}, frequency=${frequency}Hz, volume=${volume}`);
         

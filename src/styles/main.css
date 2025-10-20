@@ -200,6 +200,24 @@ button:hover {
     background-color: var(--secondary-color);
 }
 
+/* Anchor styled as button for handout link */
+.button-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}
+
+.button-link:hover,
+.button-link:focus {
+    background-color: var(--secondary-color);
+    outline: none;
+}
+
 /* Navigation toggle buttons - dynamically created toggle buttons */
 .nav-toggle-button {
     margin: 8px 0;
@@ -1007,10 +1025,10 @@ header {
     overflow: hidden;
     white-space: nowrap;
     /* Enable text selection and caret navigation */
-    user-select: text;
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
+    user-select: text;
     /* Force caret visibility and ensure proper text navigation */
     caret-shape: auto;
     /* Ensure the field always shows the caret when focused */
@@ -1044,6 +1062,12 @@ header {
 [data-theme="dark"] .review-text-field::selection {
     background-color: var(--primary-color);
     color: #000;
+}
+
+/* Hide variable selection panel by default; toggled via JS when needed */
+.variable-selection,
+#variableSelection {
+    display: none;
 }
 
 /* High contrast mode support */
