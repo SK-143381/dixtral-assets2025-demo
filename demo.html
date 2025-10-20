@@ -108,6 +108,11 @@
             -ms-user-select: text;
             user-select: text;
         }
+        
+        /* Hidden state for mode-specific controls */
+        .point-mode-only {
+            display: none;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -157,6 +162,13 @@
                         <button id="nav-down" class="virtual-nav-btn p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Navigate down">↓</button>
                         <div></div>
                     </div>
+                    
+                    <!-- Segment Navigation (Point Mode Only) -->
+                    <div id="y-segment-controls" class="grid grid-cols-2 gap-4 mt-6 point-mode-only">
+                        <button id="prev-segment" class="virtual-nav-btn w-full p-3 bg-blue-200 hover:bg-blue-600 hover:text-white rounded transition" aria-label="Move to previous segment">← Prev Segment</button>
+                        <button id="next-segment" class="virtual-nav-btn w-full p-3 bg-blue-200 hover:bg-blue-600 hover:text-white rounded transition" aria-label="Move to next segment">Next Segment →</button>
+                    </div>
+                    
                      <div class="grid grid-cols-2 gap-4 mt-6">
                         <button id="switch-axis" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Switch navigation axis">Switch Axis (N)</button>
                         <button id="autoplay" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Toggle autoplay">Autoplay (P)</button>
@@ -165,9 +177,7 @@
                         <button id="toggle-sonification" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Toggle audio sonification">Audio (S)</button>
                         <button id="switch-mode" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Switch between surface and point mode">Point Mode</button>
                     </div>
-                    <div class="grid grid-cols-1 gap-4 mt-4">
-                        <button id="next-segment" class="virtual-nav-btn w-full p-3 bg-blue-200 hover:bg-blue-600 hover:text-white rounded transition" aria-label="Move to next Y segment">Next Y Segment (Ctrl+Shift+↑)</button>
-                    </div>
+
                 </div>
 
                 <!-- Right: Feedback Panels -->
@@ -408,6 +418,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sonificationBtn = document.getElementById('toggle-sonification');
     const switchModeBtn = document.getElementById('switch-mode');
     const nextSegmentBtn = document.getElementById('next-segment');
+    const prevSegmentBtn = document.getElementById('prev-segment');
+    const ySegmentControls = document.getElementById('y-segment-controls');
     
     const sonificationMaps = {
         x: document.getElementById('map-x'),
@@ -452,21 +464,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         canvas.dispatchEvent(event);
     }
 
+    // Track current display mode
+    let currentDisplayMode = 'points'; // Start with points mode
+
     function switchDisplayMode() {
-        if (demoApp && demoApp.ui && demoApp.ui.controls && demoApp.ui.controls.displayMode) {
-            const currentMode = demoApp.ui.controls.displayMode.value;
-            const newMode = currentMode === 'points' ? 'surface' : 'points';
-            demoApp.ui.controls.displayMode.value = newMode;
+        // Toggle the current mode
+        currentDisplayMode = (currentDisplayMode === 'points') ? 'surface' : 'points';
+        
+        try {
+            // Method 1: Try to access the display mode control directly
+            if (demoApp && demoApp.ui && demoApp.ui.controls && demoApp.ui.controls.displayMode) {
+                const oldValue = demoApp.ui.controls.displayMode.value;
+                demoApp.ui.controls.displayMode.value = currentDisplayMode;
+                
+                // Trigger the change event manually
+                const changeEvent = new Event('change', { bubbles: true });
+                demoApp.ui.controls.displayMode.dispatchEvent(changeEvent);
+                
+                console.log(`Mode switched from ${oldValue} to ${currentDisplayMode}`);
+                return currentDisplayMode;
+            }
             
-            // Trigger display mode change event
-            const displayModeEvent = new CustomEvent('display-mode-changed', {
-                detail: { displayMode: newMode }
-            });
-            document.dispatchEvent(displayModeEvent);
+            // Method 2: Try to find the displayMode select element in the DOM
+            const displayModeSelect = document.getElementById('displayMode');
+            if (displayModeSelect) {
+                const oldValue = displayModeSelect.value;
+                displayModeSelect.value = currentDisplayMode;
+                
+                // Trigger change event
+                const changeEvent = new Event('change', { bubbles: true });
+                displayModeSelect.dispatchEvent(changeEvent);
+                
+                console.log(`Mode switched via DOM from ${oldValue} to ${currentDisplayMode}`);
+                console.log(`displayMode select value is now: ${displayModeSelect.value}`);
+                return currentDisplayMode;
+            } else {
+                console.log('displayMode select not found in DOM');
+            }
             
-            return newMode;
+            // Method 3: Try direct method calls on the app
+            if (demoApp) {
+                if (currentDisplayMode === 'surface' && demoApp.switchToSurface) {
+                    demoApp.switchToSurface();
+                    return currentDisplayMode;
+                } else if (currentDisplayMode === 'points' && demoApp.switchToPoints) {
+                    demoApp.switchToPoints();
+                    return currentDisplayMode;
+                }
+            }
+            
+            console.log('No mode switching method found, mode may not have changed');
+            return currentDisplayMode;
+            
+        } catch (error) {
+            console.error('Error during mode switch:', error);
+            return currentDisplayMode;
         }
-        return null;
     }
 
     function moveToNextSegment() {
@@ -476,6 +529,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         const event = new KeyboardEvent('keydown', {
             key: 'ArrowUp',
             code: 'ArrowUp',
+            ctrlKey: true,
+            shiftKey: true,
+            bubbles: true,
+            cancelable: true
+        });
+        canvas.dispatchEvent(event);
+    }
+
+    function moveToPrevSegment() {
+        if (!canvas) return;
+        
+        // Simulate Ctrl+Shift+ArrowDown for previous Y segment
+        const event = new KeyboardEvent('keydown', {
+            key: 'ArrowDown',
+            code: 'ArrowDown',
             ctrlKey: true,
             shiftKey: true,
             bubbles: true,
@@ -569,10 +637,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Function to get current navigation info from DIXTRAL
     function getCurrentNavigationInfo() {
         try {
-            if (demoApp && demoApp.navigation && demoApp.navigation.textController) {
-                const currentPoint = demoApp.navigation.getCurrentPoint();
-                if (currentPoint) {
-                    return demoApp.navigation.textController.getPointMessage(currentPoint);
+            if (demoApp && demoApp.navigation) {
+                // Try multiple ways to get current position
+                let currentPoint = null;
+                let axis = 'Unknown';
+                let mode = currentDisplayMode || 'points';
+                
+                // Get current position from multiple possible sources
+                if (demoApp.navigation.getCurrentPoint) {
+                    currentPoint = demoApp.navigation.getCurrentPoint();
+                } else if (demoApp.navigation.currentPosition) {
+                    currentPoint = demoApp.navigation.currentPosition;
+                } else if (demoApp.navigation.position) {
+                    currentPoint = demoApp.navigation.position;
+                } else if (demoApp.navigation.textController && demoApp.navigation.textController.currentPoint) {
+                    currentPoint = demoApp.navigation.textController.currentPoint;
+                } else if (demoApp.data && demoApp.data.currentPoint) {
+                    currentPoint = demoApp.data.currentPoint;
+                }
+                
+                // Get current axis from multiple possible sources
+                if (demoApp.navigation.currentAxis) {
+                    axis = demoApp.navigation.currentAxis.toUpperCase();
+                } else if (demoApp.navigation.axis) {
+                    axis = demoApp.navigation.axis.toUpperCase();
+                } else if (demoApp.navigation.navigationController && demoApp.navigation.navigationController.currentAxis) {
+                    axis = demoApp.navigation.navigationController.currentAxis.toUpperCase();
+                } else if (demoApp.navigation.navigationController && demoApp.navigation.navigationController.axis) {
+                    axis = demoApp.navigation.navigationController.axis.toUpperCase();
+                } else {
+                    // Default to Y axis as that's the most common starting axis
+                    axis = 'Y';
+                }
+                
+                // Try to get actual coordinate values from the data
+                if (!currentPoint && demoApp.data && demoApp.data.dataPoints) {
+                    // Try to get the current index or position from navigation
+                    let currentIndex = 0;
+                    if (demoApp.navigation.currentIndex !== undefined) {
+                        currentIndex = demoApp.navigation.currentIndex;
+                    } else if (demoApp.navigation.index !== undefined) {
+                        currentIndex = demoApp.navigation.index;
+                    }
+                    
+                    if (demoApp.data.dataPoints[currentIndex]) {
+                        currentPoint = demoApp.data.dataPoints[currentIndex];
+                    }
+                }
+                
+                // Build message based on available data
+                if (currentPoint && typeof currentPoint === 'object') {
+                    const x = currentPoint.x !== undefined ? currentPoint.x.toFixed(2) : '?';
+                    const y = currentPoint.y !== undefined ? currentPoint.y.toFixed(2) : '?';
+                    const z = currentPoint.z !== undefined ? currentPoint.z.toFixed(2) : '?';
+                    
+                    const pointType = mode === 'points' ? 'Point' : 'Square';
+                    return `Manual Navigation (${axis}-Axis): ${pointType}(${x}, ${y}, ${z})`;
+                } else {
+                    return `Manual Navigation (${axis}-Axis): Navigating ${mode} mode`;
                 }
             }
         } catch (error) {
@@ -587,8 +709,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.stopPropagation();
         simulateArrowKey('up');
         highlightMapping('y');
-        const navInfo = getCurrentNavigationInfo();
-        updateTextOutput(navInfo || 'Navigation: Moving up (Y-axis positive direction)');
+        setTimeout(() => {
+            const navInfo = getCurrentNavigationInfo();
+            updateTextOutput(navInfo || 'Navigation: Moving up (Y-axis positive direction)');
+        }, 100);
     });
 
     navButtons.down?.addEventListener('click', (e) => {
@@ -596,8 +720,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.stopPropagation();
         simulateArrowKey('down');
         highlightMapping('y');
-        const navInfo = getCurrentNavigationInfo();
-        updateTextOutput(navInfo || 'Navigation: Moving down (Y-axis negative direction)');
+        setTimeout(() => {
+            const navInfo = getCurrentNavigationInfo();
+            updateTextOutput(navInfo || 'Navigation: Moving down (Y-axis negative direction)');
+        }, 100);
     });
 
     navButtons.left?.addEventListener('click', (e) => {
@@ -605,8 +731,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.stopPropagation();
         simulateArrowKey('left');
         highlightMapping('x');
-        const navInfo = getCurrentNavigationInfo();
-        updateTextOutput(navInfo || 'Navigation: Moving left (X-axis negative direction)');
+        setTimeout(() => {
+            const navInfo = getCurrentNavigationInfo();
+            updateTextOutput(navInfo || 'Navigation: Moving left (X-axis negative direction)');
+        }, 100);
     });
 
     navButtons.right?.addEventListener('click', (e) => {
@@ -614,8 +742,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.stopPropagation();
         simulateArrowKey('right');
         highlightMapping('x');
-        const navInfo = getCurrentNavigationInfo();
-        updateTextOutput(navInfo || 'Navigation: Moving right (X-axis positive direction)');
+        setTimeout(() => {
+            const navInfo = getCurrentNavigationInfo();
+            updateTextOutput(navInfo || 'Navigation: Moving right (X-axis positive direction)');
+        }, 100);
     });
 
     // Switch axis button (N key)
@@ -644,14 +774,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateTextOutput('Toggling audio sonification feedback');
     });
 
+    // Function to update control visibility based on mode
+    function updateControlVisibility(mode) {
+        if (ySegmentControls) {
+            if (mode === 'points') {
+                ySegmentControls.classList.remove('point-mode-only');
+                ySegmentControls.style.display = 'grid';
+            } else {
+                ySegmentControls.classList.add('point-mode-only');
+                ySegmentControls.style.display = 'none';
+            }
+        }
+    }
+
     // Switch mode button (surface/point toggle)
     switchModeBtn?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        
+        console.log('Switch mode button clicked');
+        
         const newMode = switchDisplayMode();
         if (newMode) {
+            // Update button text to show current mode
             switchModeBtn.textContent = newMode === 'points' ? 'Point Mode' : 'Surface Mode';
+            
+            // Update control visibility
+            updateControlVisibility(newMode);
+            
+            // Update text output
             updateTextOutput(`Switched to ${newMode} display mode`);
+            
+            console.log(`Successfully switched to ${newMode} mode`);
+        } else {
+            console.log('Mode switch failed');
+            updateTextOutput('Mode switch failed - please try again');
         }
     });
 
@@ -660,7 +817,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         e.stopPropagation();
         moveToNextSegment();
-        updateTextOutput('Moving to next Y segment...');
+        updateTextOutput('Moving to next segment...');
+        setTimeout(() => {
+            const navInfo = getCurrentNavigationInfo();
+            if (navInfo) {
+                updateTextOutput(navInfo);
+            }
+        }, 100);
+    });
+
+    // Previous segment button (Ctrl+Shift+Down)
+    prevSegmentBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        moveToPrevSegment();
+        updateTextOutput('Moving to previous segment...');
         setTimeout(() => {
             const navInfo = getCurrentNavigationInfo();
             if (navInfo) {
@@ -734,6 +905,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Focus the canvas to enable navigation after initialization
             setTimeout(() => {
                 canvas?.focus();
+                
+                // Initialize display mode tracking
+                currentDisplayMode = 'points'; // Ensure we start in points mode
+                
+                // Initialize control visibility (starts in point mode)
+                updateControlVisibility('points');
+                
+                // Set initial button text
+                if (switchModeBtn) {
+                    switchModeBtn.textContent = 'Point Mode';
+                }
                 
                 // Set up resize observer to handle canvas resizing
                 if (canvas && demoApp.engine) {
