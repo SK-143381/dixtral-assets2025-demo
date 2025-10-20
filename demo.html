@@ -134,12 +134,8 @@
 
         <!-- The Challenge Section -->
         <section id="challenge" class="mb-12">
-            <h2 class="text-2xl font-bold text-center mb-6">The Challenge of Inaccessible Data</h2>
-            <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-                <p class="text-base text-gray-800 mb-4">Three-dimensional data visualizations are invaluable in science and engineering, revealing complex spatial patterns. However, their reliance on visual interaction excludes blind and low-vision (BLV) users, creating a significant barrier to STEM fields.</p>
-                <blockquote class="border-l-4 accent-border pl-4 italic text-gray-600 text-sm">
-                    "Existing alternatives like alt-text or static 3D prints often increase cognitive load, lack interactivity, and fail to convey the dynamic nature of 3D data. Our research addresses this gap by creating a web-native, multimodal system from the ground up."
-                </blockquote>
+            <div class="max-w-4xl mx-auto text-center">
+                <p class="text-lg text-gray-700 italic">Three-dimensional data visualizations exclude blind and low-vision users, creating barriers to STEM fields—our research addresses this gap with a web-native, multimodal system.</p>
             </div>
         </section>
         
@@ -951,23 +947,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const layerInfo = {
         app: {
             title: 'Application Layer',
-            desc: 'This top-level layer manages the application\'s lifecycle, initializes all other system components in the correct order, and handles global event coordination and error handling.'
+            desc: 'The top-level orchestrator that manages DIXTRAL\'s complete lifecycle from initialization to shutdown. This layer coordinates communication between all other layers, handles global state management, and provides centralized error handling and recovery mechanisms. It implements the main event loop, manages memory allocation, and ensures proper resource cleanup. The Application Layer also handles cross-cutting concerns like logging, performance monitoring, and maintains the overall system integrity by validating interactions between components.'
         },
         ui: {
             title: 'UI Layer',
-            desc: 'Responsible for all user-facing interface components, including controls, menus, and visual themes. It handles all visual updates and coordinates the display of plot types and axes.'
+            desc: 'Manages all visual interface components and user interactions through a comprehensive control system. This layer handles dynamic UI generation, theme management (including dark mode), and responsive layout adjustments for different screen sizes. It coordinates visual feedback systems, manages control panel states, and provides real-time updates to sliders, dropdowns, and buttons. The UI Layer also handles mouse and touch interactions, viewport management, and ensures visual consistency across all interface elements while maintaining accessibility standards.'
         },
         access: {
             title: 'Accessibility Layer',
-            desc: 'The core of DIXTRAL\'s mission. This layer centralizes all non-visual functionalities like sonification, text-to-speech, gamepad input, and the tri-axis navigation system. It operates independently of the rendering engine.'
+            desc: 'The cornerstone of DIXTRAL\'s inclusive design philosophy, implementing a comprehensive suite of non-visual interaction methods. This layer features advanced sonification algorithms that map 3D coordinates to audio properties (pitch, stereo panning, volume, and duration), intelligent text-to-speech integration with contextual announcements, and sophisticated gamepad support for alternative navigation. It includes a tri-axis navigation system enabling systematic data exploration, review modes for detailed inspection, and customizable feedback mechanisms. The layer operates independently from visual rendering, ensuring full functionality regardless of visual capabilities.'
         },
         engine: {
             title: 'Engine Layer',
-            desc: 'Contains the custom WebGL-based rendering pipeline. It manages all visualization tasks, including real-time rendering of point clouds and surface meshes, shader management, and performance optimization.'
+            desc: 'Houses DIXTRAL\'s high-performance WebGL rendering pipeline optimized for interactive 3D scientific visualization. This layer manages vertex and fragment shaders for both point cloud and surface mesh rendering, implements efficient GPU memory management, and provides real-time camera controls with smooth transitions. It features adaptive level-of-detail systems for large datasets, color mapping algorithms for multiple schemes (rainbow, grayscale, heatmap), and dynamic point sizing. The Engine Layer also handles picking operations for interactive selection, maintains 60fps performance targets, and includes fallback mechanisms for varying hardware capabilities.'
         },
         data: {
             title: 'Data Layer',
-            desc: 'Manages all data-related operations. It handles data ingestion from various formats (CSV, JSON), validation, normalization, and computes descriptive statistics for display.'
+            desc: 'Provides robust data management capabilities supporting multiple scientific data formats and real-time processing workflows. This layer implements intelligent CSV parsing with automatic type detection, JSON data validation and normalization, and handles both streaming and batch data ingestion. It features comprehensive statistical analysis including min/max computation, distribution analysis, and outlier detection. The Data Layer generates synthetic datasets for testing, manages data transformation pipelines, implements efficient spatial indexing for navigation, and provides data export functionality. It also handles missing value imputation and maintains data integrity throughout the visualization pipeline.'
         }
     };
 
