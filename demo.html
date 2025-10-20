@@ -703,11 +703,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return null;
     }
 
-    // Virtual navigation buttons
+    // Virtual navigation buttons (up/down functionality swapped for point mode)
     navButtons.up?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        simulateArrowKey('up');
+        simulateArrowKey('down');
         highlightMapping('y');
         setTimeout(() => {
             const navInfo = getCurrentNavigationInfo();
@@ -718,7 +718,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     navButtons.down?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        simulateArrowKey('down');
+        simulateArrowKey('up');
         highlightMapping('y');
         setTimeout(() => {
             const navInfo = getCurrentNavigationInfo();
