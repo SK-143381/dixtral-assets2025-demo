@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/main.css">
     <!-- Chosen Palette: Academic Calm -->
     <!-- Application Structure Plan: A single-page, long-scroll layout with a sticky navigation header. This structure guides the user through a narrative: starting with the core problem, introducing the DIXTRAL system through an interactive simulation of its multimodal feedback, explaining its technical architecture, and concluding with the key research findings. This thematic flow is more engaging for a web audience than a linear paper format, allowing users to both get a quick overview and dive into specific sections. The interactive simulation is the centerpiece, designed to give a tangible feel for the user experience without needing a full WebGL implementation. -->
     <!-- Visualization & Content Choices: The application visualizes concepts rather than raw data. The central 'DIXTRAL in Action' section uses an interactive mock-up (HTML/CSS buttons and text areas) to simulate the system's core feedback loop (Goal: Demonstrate multimodal interaction). An interactive diagram built with HTML/CSS is used to explain the 5-layer system architecture (Goal: Organize complex information). Key findings are presented as digestible cards (Goal: Inform). This approach uses interaction to clarify the paper's concepts, adhering to the NO SVG/Mermaid constraint. All interactions are powered by vanilla JavaScript. -->
@@ -22,34 +23,94 @@
         .accent-bg { background-color: #005f73; }
         .accent-border { border-color: #005f73; }
         .secondary-bg { background-color: #e9ecef; }
-        .sticky-nav {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            backdrop-filter: blur(10px);
-            background-color: rgba(248, 249, 250, 0.8);
+        
+        /* Remove all header-related styles */
+        
+        /* Ensure all sections have proper spacing */
+        #challenge, #simulation, #architecture, #findings {
+            margin-bottom: 5rem;
+        }
+        
+        /* Fix z-index for demo section to ensure buttons are clickable */
+        #simulation {
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Ensure navigation buttons are accessible */
+        #simulation .bg-white {
+            position: relative;
+            z-index: 20;
         }
         .highlight-active {
             transition: all 0.3s ease-in-out;
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(0, 95, 115, 0.5);
         }
+        
+        /* Demo canvas styling */
+        #demoCanvas {
+            width: 100%;
+            height: 400px;
+            min-height: 300px;
+            border: 1px solid #e5e7eb;
+            background-color: #1a1a1a;
+            display: block;
+        }
+        
+        /* Enhance virtual button styling for better interaction */
+        .virtual-nav-btn {
+            min-height: 48px;
+            min-width: 48px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            z-index: 1000;
+            border: 2px solid transparent;
+            display: inline-block;
+        }
+        
+        .virtual-nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 95, 115, 0.2);
+            border-color: #005f73;
+        }
+        
+        .virtual-nav-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0, 95, 115, 0.3);
+            background-color: #005f73 !important;
+            color: white !important;
+        }
+        
+        .virtual-nav-btn:focus {
+            outline: 2px solid #005f73;
+            outline-offset: 2px;
+        }
+        
+        /* Prevent text selection on the entire demo section */
+        #simulation * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Allow text selection only in text output area */
+        #text-output {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
     </style>
 </head>
 <body class="antialiased">
-
-    <!-- Header & Navigation -->
-    <header class="sticky-nav border-b border-gray-200">
-        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
-            <h1 class="text-xl font-bold accent-color">DIXTRAL</h1>
-            <div class="hidden md:flex space-x-8">
-                <a href="#challenge" class="text-gray-600 hover:accent-color transition">The Challenge</a>
-                <a href="#simulation" class="text-gray-600 hover:accent-color transition">Simulation</a>
-                <a href="#architecture" class="text-gray-600 hover:accent-color transition">Architecture</a>
-                <a href="#findings" class="text-gray-600 hover:accent-color transition">Findings</a>
-            </div>
-        </nav>
-    </header>
 
     <main class="container mx-auto px-6 py-12">
         <!-- Hero Section -->
@@ -73,30 +134,39 @@
         <!-- Interactive Simulation Section -->
         <section id="simulation" class="mb-20">
             <h2 class="text-3xl font-bold text-center mb-4">DIXTRAL in Action</h2>
-            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">This simulation demonstrates DIXTRAL's core principle: synchronized multimodal feedback. Use the controls to "navigate" a sample 3D plot and observe how auditory, textual, and spatial information is presented to the user.</p>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">Experience DIXTRAL's full functionality with this interactive benzene point plot. Use the virtual controls below to navigate the 3D data and experience synchronized multimodal feedback.</p>
             
             <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl grid md:grid-cols-2 gap-8">
-                <!-- Left: Mock UI -->
+                <!-- Left: Real 3D Plot & Controls -->
                 <div class="flex flex-col">
-                    <h3 class="font-bold text-xl mb-4">Simulated 3D Plot & Controls</h3>
-                    <div class="w-full aspect-video secondary-bg rounded-md flex items-center justify-center mb-4">
-                        <p class="text-gray-500"></p>
-                    </div>
+                    <h3 class="font-bold text-xl mb-4">Benzene 3D Point Plot & Controls</h3>
+                    <canvas id="demoCanvas" 
+                            style="width: 100%; height: 400px; background-color: #1a1a1a; border: 1px solid #e5e7eb;"
+                            tabindex="0"
+                            aria-label="Interactive 3D benzene point plot - Use virtual controls below to navigate">
+                    </canvas>
                     
                     <div class="grid grid-cols-3 gap-2 items-center justify-center">
                         <div></div>
-                        <button id="nav-up" class="p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition">↑</button>
+                        <button id="nav-up" class="virtual-nav-btn p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Navigate up">↑</button>
                         <div></div>
-                        <button id="nav-left" class="p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition">←</button>
+                        <button id="nav-left" class="virtual-nav-btn p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Navigate left">←</button>
                         <div class="text-center font-medium text-gray-700">Navigate</div>
-                        <button id="nav-right" class="p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition">→</button>
+                        <button id="nav-right" class="virtual-nav-btn p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Navigate right">→</button>
                         <div></div>
-                        <button id="nav-down" class="p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition">↓</button>
+                        <button id="nav-down" class="virtual-nav-btn p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Navigate down">↓</button>
                         <div></div>
                     </div>
                      <div class="grid grid-cols-2 gap-4 mt-6">
-                        <button id="switch-axis" class="w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition">Switch Axis (N)</button>
-                        <button id="autoplay" class="w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition">Autoplay (P)</button>
+                        <button id="switch-axis" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Switch navigation axis">Switch Axis (N)</button>
+                        <button id="autoplay" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Toggle autoplay">Autoplay (P)</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <button id="toggle-sonification" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Toggle audio sonification">Audio (S)</button>
+                        <button id="switch-mode" class="virtual-nav-btn w-full p-3 bg-gray-200 hover:accent-bg hover:text-white rounded transition" aria-label="Switch between surface and point mode">Point Mode</button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 mt-4">
+                        <button id="next-segment" class="virtual-nav-btn w-full p-3 bg-blue-200 hover:bg-blue-600 hover:text-white rounded transition" aria-label="Move to next Y segment">Next Y Segment (Ctrl+Shift+↑)</button>
                     </div>
                 </div>
 
@@ -108,7 +178,7 @@
                     <div class="mb-6">
                         <label for="text-output" class="font-semibold text-gray-700 block mb-2">Textual & Spoken Output</label>
                         <div id="text-output" class="w-full h-24 p-3 secondary-bg rounded-md font-mono text-sm text-gray-800 overflow-y-auto">
-                            Welcome to DIXTRAL. Press a navigation key to begin exploring.
+                            Manual Navigation (Y-Axis): Navigating Z-Axis. Point(2.1, 7.8, 4.1), Duration: Long
                         </div>
                     </div>
 
@@ -185,6 +255,50 @@
         </section>
     </main>
 
+    <!-- Hidden elements required by DIXTRAL application -->
+    <div style="display: none;" aria-hidden="true">
+        <!-- UI Control elements that DIXTRAL expects -->
+        <input type="range" id="xStart" min="120" max="200" value="120">
+        <input type="range" id="xEnd" min="120" max="200" value="200">
+        <input type="range" id="zStart" min="0" max="15" value="0">
+        <input type="range" id="zEnd" min="0" max="15" value="15">
+        <select id="displayMode">
+            <option value="points" selected>Points</option>
+            <option value="surface">Surface</option>
+        </select>
+        <select id="colorScheme">
+            <option value="rainbow">Rainbow</option>
+        </select>
+        <input type="range" id="pointSize" min="1" max="10" value="3">
+        <input type="range" id="threshold" min="0" max="1" value="0">
+        <input type="range" id="rotationX" min="-180" max="180" value="0">
+        <input type="range" id="rotationY" min="-180" max="180" value="0">
+        <input type="range" id="zoom" min="0.1" max="2" value="1">
+        
+        <!-- Value display elements that UI controller updates -->
+        <span id="xStartValue">120</span>
+        <span id="xEndValue">200</span>
+        <span id="zStartValue">0.0</span>
+        <span id="zEndValue">15.0</span>
+        <span id="pointSizeValue">3</span>
+        <span id="thresholdValue">0.00</span>
+        <span id="rotationXValue">0°</span>
+        <span id="rotationYValue">0°</span>
+        <span id="zoomValue">1.0x</span>
+        <span id="fps">0</span>
+        <span id="pointCount">0</span>
+        
+        <!-- Sample info display element -->
+        <div id="sampleInfo"></div>
+        
+        <!-- Navigation info display element -->
+        <div id="navigationInfo"></div>
+        
+        <!-- Screen reader elements -->
+        <div id="screen-reader-announcement" aria-live="polite"></div>
+        <div id="navigation-announcements" aria-live="assertive"></div>
+    </div>
+
     <!-- Footer -->
     <footer class="secondary-bg border-t border-gray-200">
         <div class="container mx-auto px-6 py-8 text-center text-gray-600">
@@ -198,10 +312,90 @@
         </div>
     </footer>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+<script type="module">
+// Import the DIXTRAL application
+import { SurfacePlotApplication } from './src/app.js';
 
-    // --- Interactive Simulation Logic ---
+document.addEventListener('DOMContentLoaded', async () => {
+    // --- Initialize DIXTRAL Application ---
+    const demoApp = new SurfacePlotApplication();
+    
+    // Initialize with the demo canvas
+    const canvas = document.getElementById('demoCanvas');
+    if (canvas) {
+        try {
+            // Set proper canvas dimensions
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 800;
+            canvas.height = rect.height || 400;
+            
+            // Ensure WebGL context can be created
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) {
+                throw new Error('WebGL not supported');
+            }
+            
+            // Clear the canvas to a dark color initially
+            gl.clearColor(0.1, 0.1, 0.1, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            
+            await demoApp.initialize(canvas);
+            
+            // Load benzene data in point mode
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    demoApp.data.loadSample('benzene');
+                    resolve();
+                }, 100);
+            });
+            
+            // Set to point display mode after a short delay
+            setTimeout(() => {
+                const displayModeEvent = new CustomEvent('display-mode-changed', {
+                    detail: { displayMode: 'points' }
+                });
+                document.dispatchEvent(displayModeEvent);
+                
+                // Force a render after everything is set up
+                if (demoApp.engine) {
+                    demoApp.engine.render(demoApp.data);
+                }
+                
+                // Activate navigation system and focus canvas
+                if (demoApp.navigation) {
+                    demoApp.navigation.isActive = true;
+                    canvas.focus();
+                    
+                    // Set initial text output
+                    setTimeout(() => {
+                        const navInfo = getCurrentNavigationInfo();
+                        if (navInfo) {
+                            updateTextOutput(navInfo);
+                        } else {
+                            updateTextOutput('DIXTRAL navigation active. Use virtual controls to explore the benzene point cloud.');
+                        }
+                    }, 100);
+                }
+            }, 500);
+            
+        } catch (error) {
+            console.error('Failed to initialize demo application:', error);
+            
+            // Show error in the canvas area
+            const parent = canvas.parentNode;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'w-full aspect-video bg-red-100 rounded-md flex items-center justify-center';
+            errorDiv.innerHTML = `
+                <div class="text-center p-4">
+                    <p class="text-red-700 font-bold">Failed to initialize 3D plot</p>
+                    <p class="text-red-600 text-sm">WebGL may not be supported in your browser</p>
+                </div>
+            `;
+            parent.replaceChild(errorDiv, canvas);
+        }
+    }
+
+    // --- Virtual Controls Implementation ---
     const textOutput = document.getElementById('text-output');
     const navButtons = {
         up: document.getElementById('nav-up'),
@@ -211,6 +405,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const switchAxisBtn = document.getElementById('switch-axis');
     const autoplayBtn = document.getElementById('autoplay');
+    const sonificationBtn = document.getElementById('toggle-sonification');
+    const switchModeBtn = document.getElementById('switch-mode');
+    const nextSegmentBtn = document.getElementById('next-segment');
     
     const sonificationMaps = {
         x: document.getElementById('map-x'),
@@ -218,81 +415,351 @@ document.addEventListener('DOMContentLoaded', () => {
         z: document.getElementById('map-z'),
     };
 
-    let currentAxis = 'Y';
-    let autoplayInterval = null;
-    let autoplayState = 0;
-
-    const feedbackData = [
-        "Navigating Y-Axis. Point(1.1, 8.2, 3.4), Value: High",
-        "Navigating Y-Axis. Point(1.2, 7.9, 3.5), Value: High",
-        "Navigating X-Axis. Point(1.5, 7.9, 3.5), Stereo: Center",
-        "Navigating X-Axis. Point(2.1, 7.8, 3.6), Stereo: Right",
-        "Navigating Z-Axis. Point(2.1, 7.8, 4.0), Duration: Long",
-        "Navigating Z-Axis. Point(2.1, 7.8, 4.1), Duration: Long",
-        "Boundary reached. No further points in this direction.",
-        "Navigating Y-Axis. Point(3.3, 2.1, 5.5), Value: Low",
-    ];
-
-    function updateText(message, mapToHighlight) {
-        textOutput.textContent = message;
-        textOutput.scrollTop = textOutput.scrollHeight; 
+    // Virtual key mappings to actual DIXTRAL functionality
+    function simulateKeyPress(key) {
+        if (!canvas) return;
         
-        Object.values(sonificationMaps).forEach(el => el.classList.remove('highlight-active', 'accent-bg', 'text-white'));
-        
-        if (mapToHighlight && sonificationMaps[mapToHighlight]) {
-            sonificationMaps[mapToHighlight].classList.add('highlight-active', 'accent-bg', 'text-white');
+        // Try direct access first, then fall back to keyboard events
+        if (demoApp && demoApp.navigation) {
+            try {
+                if (key === 'n' && demoApp.navigation.toggleNavigationAxis) {
+                    demoApp.navigation.toggleNavigationAxis();
+                    return;
+                } else if (key === 'p' && demoApp.navigation.handlePKeyPress) {
+                    demoApp.navigation.handlePKeyPress();
+                    return;
+                } else if (key === 's' && demoApp.navigation.sonificationController) {
+                    demoApp.navigation.sonificationController.toggleEnabled();
+                    return;
+                } else if (key === 'v' && demoApp.navigation.reviewModeController) {
+                    demoApp.navigation.reviewModeController.toggleReviewMode();
+                    return;
+                }
+            } catch (error) {
+                console.log('Direct access failed, using keyboard events');
+            }
         }
-    }
-
-    function getRandomFeedback() {
-        return feedbackData[Math.floor(Math.random() * feedbackData.length)];
-    }
-
-    Object.values(navButtons).forEach(btn => {
-        btn.addEventListener('click', () => {
-            stopAutoplay();
-            let axisMap = 'y';
-            if (currentAxis === 'X') axisMap = 'x';
-            if (currentAxis === 'Z') axisMap = 'z';
-            updateText(`Manual Navigation (${currentAxis}-Axis): ${getRandomFeedback()}`, axisMap);
+        
+        // Fallback to keyboard event simulation
+        const event = new KeyboardEvent('keydown', {
+            key: key,
+            code: `Key${key.toUpperCase()}`,
+            keyCode: key.charCodeAt(0),
+            which: key.charCodeAt(0),
+            bubbles: true,
+            cancelable: true
         });
-    });
+        canvas.dispatchEvent(event);
+    }
 
-    switchAxisBtn.addEventListener('click', () => {
-        stopAutoplay();
-        if (currentAxis === 'Y') currentAxis = 'Z';
-        else if (currentAxis === 'Z') currentAxis = 'X';
-        else currentAxis = 'Y';
-        updateText(`Navigation axis switched to ${currentAxis}.`, null);
-    });
+    function switchDisplayMode() {
+        if (demoApp && demoApp.ui && demoApp.ui.controls && demoApp.ui.controls.displayMode) {
+            const currentMode = demoApp.ui.controls.displayMode.value;
+            const newMode = currentMode === 'points' ? 'surface' : 'points';
+            demoApp.ui.controls.displayMode.value = newMode;
+            
+            // Trigger display mode change event
+            const displayModeEvent = new CustomEvent('display-mode-changed', {
+                detail: { displayMode: newMode }
+            });
+            document.dispatchEvent(displayModeEvent);
+            
+            return newMode;
+        }
+        return null;
+    }
 
-    function stopAutoplay() {
-        if (autoplayInterval) {
-            clearInterval(autoplayInterval);
-            autoplayInterval = null;
-            autoplayBtn.textContent = 'Autoplay (P)';
+    function moveToNextSegment() {
+        if (!canvas) return;
+        
+        // Simulate Ctrl+Shift+ArrowUp for next Y segment
+        const event = new KeyboardEvent('keydown', {
+            key: 'ArrowUp',
+            code: 'ArrowUp',
+            ctrlKey: true,
+            shiftKey: true,
+            bubbles: true,
+            cancelable: true
+        });
+        canvas.dispatchEvent(event);
+    }
+
+    function simulateArrowKey(direction) {
+        if (!canvas) return;
+        
+        // Try direct access first, then fall back to keyboard events
+        if (demoApp && demoApp.navigation) {
+            try {
+                switch(direction) {
+                    case 'up':
+                        if (demoApp.navigation.moveForward) {
+                            demoApp.navigation.moveForward();
+                            return;
+                        }
+                        break;
+                    case 'down':
+                        if (demoApp.navigation.moveBackward) {
+                            demoApp.navigation.moveBackward();
+                            return;
+                        }
+                        break;
+                    case 'left':
+                        if (demoApp.navigation.moveLeft) {
+                            demoApp.navigation.moveLeft();
+                            return;
+                        }
+                        break;
+                    case 'right':
+                        if (demoApp.navigation.moveRight) {
+                            demoApp.navigation.moveRight();
+                            return;
+                        }
+                        break;
+                }
+            } catch (error) {
+                console.log('Direct navigation failed, using keyboard events');
+            }
+        }
+        
+        // Fallback to keyboard event simulation
+        const keyMap = {
+            'up': 'ArrowUp',
+            'down': 'ArrowDown', 
+            'left': 'ArrowLeft',
+            'right': 'ArrowRight'
+        };
+        
+        const event = new KeyboardEvent('keydown', {
+            key: keyMap[direction],
+            code: keyMap[direction],
+            bubbles: true,
+            cancelable: true
+        });
+        canvas.dispatchEvent(event);
+    }
+
+    function highlightMapping(mapKey) {
+        // Clear all highlights
+        Object.values(sonificationMaps).forEach(el => {
+            if (el) {
+                el.classList.remove('highlight-active', 'accent-bg', 'text-white');
+            }
+        });
+        
+        // Highlight specific mapping
+        if (mapKey && sonificationMaps[mapKey]) {
+            sonificationMaps[mapKey].classList.add('highlight-active', 'accent-bg', 'text-white');
+            
+            // Remove highlight after 2 seconds
+            setTimeout(() => {
+                if (sonificationMaps[mapKey]) {
+                    sonificationMaps[mapKey].classList.remove('highlight-active', 'accent-bg', 'text-white');
+                }
+            }, 2000);
         }
     }
-    
-    autoplayBtn.addEventListener('click', () => {
-        if (autoplayInterval) {
-            stopAutoplay();
-            updateText('Autoplay stopped.', null);
-        } else {
-            autoplayBtn.textContent = 'Stop Autoplay (P)';
-            updateText('Autoplay started. Traversing dataset...', null);
-            autoplayInterval = setInterval(() => {
-                const message = feedbackData[autoplayState % feedbackData.length];
-                let map = 'y';
-                if (message.includes('X-Axis')) map = 'x';
-                if (message.includes('Z-Axis')) map = 'z';
-                updateText(`Autoplay: ${message}`, map);
-                autoplayState++;
-            }, 1500);
+
+    function updateTextOutput(message) {
+        if (textOutput) {
+            textOutput.textContent = message;
+            textOutput.scrollTop = textOutput.scrollHeight;
+        }
+    }
+
+    // Function to get current navigation info from DIXTRAL
+    function getCurrentNavigationInfo() {
+        try {
+            if (demoApp && demoApp.navigation && demoApp.navigation.textController) {
+                const currentPoint = demoApp.navigation.getCurrentPoint();
+                if (currentPoint) {
+                    return demoApp.navigation.textController.getPointMessage(currentPoint);
+                }
+            }
+        } catch (error) {
+            console.log('Could not get navigation info:', error);
+        }
+        return null;
+    }
+
+    // Virtual navigation buttons
+    navButtons.up?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateArrowKey('up');
+        highlightMapping('y');
+        const navInfo = getCurrentNavigationInfo();
+        updateTextOutput(navInfo || 'Navigation: Moving up (Y-axis positive direction)');
+    });
+
+    navButtons.down?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateArrowKey('down');
+        highlightMapping('y');
+        const navInfo = getCurrentNavigationInfo();
+        updateTextOutput(navInfo || 'Navigation: Moving down (Y-axis negative direction)');
+    });
+
+    navButtons.left?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateArrowKey('left');
+        highlightMapping('x');
+        const navInfo = getCurrentNavigationInfo();
+        updateTextOutput(navInfo || 'Navigation: Moving left (X-axis negative direction)');
+    });
+
+    navButtons.right?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateArrowKey('right');
+        highlightMapping('x');
+        const navInfo = getCurrentNavigationInfo();
+        updateTextOutput(navInfo || 'Navigation: Moving right (X-axis positive direction)');
+    });
+
+    // Switch axis button (N key)
+    switchAxisBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateKeyPress('n');
+        updateTextOutput('Switching navigation axis (Y → Z → X → Y)');
+    });
+
+    // Autoplay button (P key)
+    autoplayBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateKeyPress('p');
+        highlightMapping('z');
+        updateTextOutput('Toggling autoplay mode - systematic data traversal');
+    });
+
+    // Sonification toggle (S key)
+    sonificationBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        simulateKeyPress('s');
+        highlightMapping('y');
+        updateTextOutput('Toggling audio sonification feedback');
+    });
+
+    // Switch mode button (surface/point toggle)
+    switchModeBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const newMode = switchDisplayMode();
+        if (newMode) {
+            switchModeBtn.textContent = newMode === 'points' ? 'Point Mode' : 'Surface Mode';
+            updateTextOutput(`Switched to ${newMode} display mode`);
         }
     });
 
-    // --- Architecture Layer Logic ---
+    // Next segment button (Ctrl+Shift+Up)
+    nextSegmentBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        moveToNextSegment();
+        updateTextOutput('Moving to next Y segment...');
+        setTimeout(() => {
+            const navInfo = getCurrentNavigationInfo();
+            if (navInfo) {
+                updateTextOutput(navInfo);
+            }
+        }, 100);
+    });
+
+    // Listen for navigation updates from the actual DIXTRAL app
+    document.addEventListener('navigation-info-updated', (event) => {
+        if (event.detail && event.detail.message) {
+            updateTextOutput(`Live: ${event.detail.message}`);
+        }
+    });
+
+    // Listen for point highlighting changes
+    document.addEventListener('point-highlighted', (event) => {
+        if (event.detail) {
+            const navInfo = getCurrentNavigationInfo();
+            if (navInfo) {
+                updateTextOutput(navInfo);
+            }
+            
+            // Determine which mapping to highlight based on current navigation axis
+            if (demoApp.navigation) {
+                const currentAxis = demoApp.navigation.currentNavigationAxis;
+                if (currentAxis === 'Y') highlightMapping('y');
+                else if (currentAxis === 'Z') highlightMapping('z');
+                else if (currentAxis === 'X') highlightMapping('x');
+            }
+        }
+    });
+
+    // Listen for autoplay state changes
+    document.addEventListener('autoplay-state-changed', (event) => {
+        if (event.detail && autoplayBtn) {
+            const { active, mode } = event.detail;
+            if (active) {
+                autoplayBtn.textContent = 'Stop Autoplay (P)';
+                autoplayBtn.classList.add('accent-bg', 'text-white');
+                updateTextOutput(`Autoplay started in ${mode} mode`);
+                highlightMapping('z');
+            } else {
+                autoplayBtn.textContent = 'Autoplay (P)';
+                autoplayBtn.classList.remove('accent-bg', 'text-white');
+                updateTextOutput('Autoplay stopped');
+            }
+        }
+    });
+
+    // Listen for sonification state changes
+    document.addEventListener('sonification-toggled', (event) => {
+        if (event.detail !== undefined && sonificationBtn) {
+            if (event.detail.enabled) {
+                sonificationBtn.classList.add('accent-bg', 'text-white');
+                updateTextOutput('Audio sonification enabled');
+            } else {
+                sonificationBtn.classList.remove('accent-bg', 'text-white');
+                updateTextOutput('Audio sonification disabled');
+            }
+        }
+    });
+
+    // Listen for navigation axis changes
+    document.addEventListener('navigation-axis-changed', (event) => {
+        if (event.detail && event.detail.axis) {
+            updateTextOutput(`Navigation axis changed to: ${event.detail.axis}-axis mode`);
+        }
+    });
+
+            // Focus the canvas to enable navigation after initialization
+            setTimeout(() => {
+                canvas?.focus();
+                
+                // Set up resize observer to handle canvas resizing
+                if (canvas && demoApp.engine) {
+                    const resizeObserver = new ResizeObserver(entries => {
+                        for (let entry of entries) {
+                            const { width, height } = entry.contentRect;
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            // Update WebGL viewport
+                            const gl = canvas.getContext('webgl');
+                            if (gl) {
+                                gl.viewport(0, 0, width, height);
+                            }
+                            
+                            // Re-render
+                            if (demoApp.engine && demoApp.data) {
+                                demoApp.engine.render(demoApp.data);
+                            }
+                        }
+                    });
+                    resizeObserver.observe(canvas);
+                }
+            }, 1000);
+
+    // --- Architecture Layer Logic (keep existing) ---
     const layerBtns = document.querySelectorAll('.layer-btn');
     const layerTitle = document.getElementById('layer-title');
     const layerDesc = document.getElementById('layer-desc');
@@ -326,8 +793,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.add('accent-border', 'bg-teal-50');
 
             const layerId = btn.id.split('-')[1];
-            layerTitle.textContent = layerInfo[layerId].title;
-            layerDesc.textContent = layerInfo[layerId].desc;
+            if (layerInfo[layerId]) {
+                layerTitle.textContent = layerInfo[layerId].title;
+                layerDesc.textContent = layerInfo[layerId].desc;
+            }
         });
     });
 });

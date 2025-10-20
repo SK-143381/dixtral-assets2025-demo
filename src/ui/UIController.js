@@ -88,7 +88,7 @@ export class UIController {
     }
 
     initializeControls() {
-        // Initialize control references
+        // Initialize control references with defensive checks
         this.controls = {
             xStart: document.getElementById('xStart'),
             xEnd: document.getElementById('xEnd'),
@@ -109,24 +109,24 @@ export class UIController {
         this.controls.timeStart = this.controls.zStart;
         this.controls.timeEnd = this.controls.zEnd;
 
-        // Setup buttons
+        // Setup buttons (optional elements)
         this.resetViewButton = document.getElementById('resetView');
         this.exportDataButton = document.getElementById('exportData');
         this.exportImageButton = document.getElementById('exportImage');
         this.importDataButton = document.getElementById('importData');
         
-        // Sample data buttons
+        // Sample data buttons (optional elements)
         this.loadBenzeneButton = document.getElementById('loadBenzene');
         this.loadSinusoidalButton = document.getElementById('loadSinusoidal');
         this.loadCustomDataButton = document.getElementById('loadCustomData');
         
-        // Variable selection
+        // Variable selection (optional elements)
         this.variableSelection = document.getElementById('variableSelection');
         this.xVariable = document.getElementById('xVariable');
         this.yVariable = document.getElementById('yVariable');
         this.zVariable = document.getElementById('zVariable');
         
-        // Analysis buttons
+        // Analysis buttons (optional elements)
         this.findPeaksButton = document.getElementById('findPeaks');
         this.baselineCorrectionButton = document.getElementById('baselineCorrection');
         this.spectralDeconvolutionButton = document.getElementById('spectralDeconvolution');

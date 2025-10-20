@@ -29,7 +29,7 @@ export class SurfacePlotApplication {
         this.filePickerOpen = false;
     }
 
-    async initialize() {
+    async initialize(customCanvas = null) {
         if (this.initialized) {
             AppLogger.warn('Application already initialized, skipping...');
             return;
@@ -37,7 +37,7 @@ export class SurfacePlotApplication {
 
         try {
             // Create canvas and WebGL context
-            this.canvas = document.getElementById('glCanvas');
+            this.canvas = customCanvas || document.getElementById('glCanvas');
             if (!this.canvas) {
                 throw new Error('Canvas element not found');
             }
@@ -539,7 +539,7 @@ export class SurfacePlotApplication {
     updateSampleInfoDisplay(info) {
         const sampleInfoElement = document.getElementById('sampleInfo');
         if (!sampleInfoElement) {
-            AppLogger.warn('Sample info element not found');
+            AppLogger.debug('Sample info element not found, skipping display update');
             return;
         }
 
